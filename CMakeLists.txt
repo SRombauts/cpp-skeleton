@@ -3,10 +3,14 @@
 # Distributed under the MIT License (MIT) (See accompanying file LICENSE.txt
 # or copy at http://opensource.org/licenses/MIT)
 
-cmake_minimum_required(VERSION 2.6)
-project(CppSkeleton)
+cmake_minimum_required(VERSION 2.8.12) # first version with add_compile_options()
+project(CppSkeleton CXX)
+
+# Verbose Makefile
+#set (CMAKE_VERBOSE_MAKEFILE ON)
 
 # Print some standard CMake variables
+message(STATUS "CMake version: ${CMAKE_VERSION}")
 message(STATUS "CMAKE_SYSTEM_NAME/_VERSION      '${CMAKE_SYSTEM_NAME}' '${CMAKE_SYSTEM_VERSION}'")
 message(STATUS "CMAKE_CXX_COMPILER_ID/_VERSION  '${CMAKE_CXX_COMPILER_ID}' '${CMAKE_CXX_COMPILER_VERSION}'")
 if (NOT MSVC)
@@ -33,25 +37,25 @@ else (MSVC)
     set(SYSTEM_LIBRARIES        "rt")
 
     # C++11 :
-    add_definitions(-std=c++0x) # equivalent to "-std=c++11" but backward compatible for GCC 4.6 on Travic-CI
+    add_compile_options(-std=c++0x) # equivalent to "-std=c++11" but backward compatible for GCC 4.6 on Travic-CI
     # Stack protection
-    add_definitions(-fstack-protector-all)
+    add_compile_options(-fstack-protector-all)
     
     if (CMAKE_COMPILER_IS_GNUCXX)
         # GCC flags
         # For stacktraces:
-        add_definitions(-rdynamic -fstack-protector-all)
+        add_compile_options(-rdynamic -fstack-protector-all)
         # Enable maximum of Warnings :
-        add_definitions(-Wall -Wextra -Wswitch-default -Wswitch-enum -Winit-self -Wformat-security -Wfloat-equal -Wcast-qual -Wconversion -Wlogical-op -Winline)
+        add_compile_options(-Wall -Wextra -Wswitch-default -Wswitch-enum -Winit-self -Wformat-security -Wfloat-equal -Wcast-qual -Wconversion -Wlogical-op -Winline)
         if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "4.9" OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.9")
-            add_definitions (-Wfloat-conversion)
-            add_definitions (-Wshadow)
+            add_compile_options (-Wfloat-conversion)
+            add_compile_options (-Wshadow)
         endif ()
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # Clang flags
         # Enable maximum of Warnings :
-        add_definitions(-Weverything)
-        add_definitions(-Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-covered-switch-default -Wno-unreachable-code)
+        add_compile_options(-Weverything)
+        add_compile_options(-Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-covered-switch-default -Wno-unreachable-code)
     endif (CMAKE_COMPILER_IS_GNUCXX)
 endif (MSVC)
 set(CPPLINT_ARG_LINELENGTH "--linelength=120")
@@ -66,7 +70,7 @@ set(source_files
  ${CMAKE_SOURCE_DIR}/src/Utils/Time.cpp src/Utils/Time.h
  ${CMAKE_SOURCE_DIR}/src/Utils/Utils.h
 )
-source_group(src,     FILES ${source_files})
+source_group(src     FILES ${source_files})
 
 # List script files
 set(script_files
@@ -75,14 +79,14 @@ set(script_files
  ${CMAKE_SOURCE_DIR}/build.bat
  ${CMAKE_SOURCE_DIR}/build.sh
 )
-source_group(scripts, FILES ${script_files})
+source_group(scripts FILES ${script_files})
 
 # List doc files
 set(doc_files
  ${CMAKE_SOURCE_DIR}/README.md
  ${CMAKE_SOURCE_DIR}/LICENSE.txt
 )
-source_group(doc,     FILES ${doc_files})
+source_group(doc     FILES ${doc_files})
 
 # All includes are relative to the "src" directory
 include_directories("${PROJECT_SOURCE_DIR}/src")
