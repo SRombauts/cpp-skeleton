@@ -54,8 +54,6 @@ public:
      *
      * @param[out]  str Buffer for the generated string
      * @param[in]   len Size of the buffer (including the null terminator)
-     *
-     * @return A random printable string.
      */
     static void genString(char* str, size_t len);
 

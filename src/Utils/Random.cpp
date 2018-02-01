@@ -24,14 +24,14 @@ namespace Utils {
 uint32_t Random::gen(uint32_t aMax) {
     assert(aMax > 0);
     assert(aMax < RAND_MAX);
-    return (std::rand() % (aMax + 1));
+    return (static_cast<uint32_t>(std::rand()) % (aMax + 1));
 }
 
 // Generate an integer between aMin and aMax (<= RAND_MAX).
 uint32_t Random::gen(uint32_t aMin, uint32_t aMax) {
     assert(aMax > aMin);
     assert((aMax - aMin) < RAND_MAX);
-    return (aMin + (std::rand() % ((aMax - aMin) + 1)));
+    return (aMin + (static_cast<uint32_t>(std::rand()) % ((aMax - aMin) + 1)));
 }
 
 // Generate a printable alphanumeric character.
@@ -58,8 +58,12 @@ Random::Init::Init() {
     std::srand(static_cast<unsigned int>(std::time(0)));
 }
 
+namespace Internals {
+
 /// Static initialization of the random generator, calling Init() before main()
 static Random::Init _mInit;
+
+} // namespace Internals
 
 
 } // namespace Utils
