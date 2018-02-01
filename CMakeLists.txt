@@ -27,9 +27,6 @@ if (MSVC)
     set(DEV_NULL                "NUL")
     set(SYSTEM_LIBRARIES        "")
     add_definitions(/D_CRT_SECURE_NO_WARNINGS)
-    # Set warning level to maximum (instead of default /W3)
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} /W4")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else (MSVC)
     set(CPPLINT_ARG_OUTPUT      "--output=eclipse")
     set(CPPCHECK_ARG_TEMPLATE   "--template=gcc")
@@ -40,26 +37,45 @@ else (MSVC)
     add_compile_options(-std=c++0x) # equivalent to "-std=c++11" but backward compatible for GCC 4.6 on Travic-CI
     # Stack protection
     add_compile_options(-fstack-protector-all)
-    
+
     if (CMAKE_COMPILER_IS_GNUCXX)
-        # GCC flags
         # For stacktraces:
-        add_compile_options(-rdynamic -fstack-protector-all)
-        # Enable maximum of Warnings :
+        add_compile_options(-rdynamic)
+    endif (CMAKE_COMPILER_IS_GNUCXX)
+endif (MSVC)
+set(CPPLINT_ARG_LINELENGTH "--linelength=120")
+set(CPPLINT_ARG_VERBOSE    "--verbose=1")
+
+
+# Link to googletest unit-test suite.
+option(CPPSKELETON_RUN_TESTS "Run googletest unit-test suite." ON)
+if (CPPSKELETON_RUN_TESTS)
+    # add the subdirectory containing the CMakeLists.txt for the googletest library
+    add_subdirectory(googletest)
+    include_directories("${PROJECT_SOURCE_DIR}/googletest/googletest/include")
+endif (CPPSKELETON_RUN_TESTS)
+
+
+# Enable maximum Warning level for our own code (after the googletest lib)
+if (MSVC)
+    # Set warning level to maximum (instead of default /W3)
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} /W4")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+else (MSVC)
+    if (CMAKE_COMPILER_IS_GNUCXX)
+        # Enable maximum of Warnings for GCC:
         add_compile_options(-Wall -Wextra -Wswitch-default -Wswitch-enum -Winit-self -Wformat-security -Wfloat-equal -Wcast-qual -Wconversion -Wlogical-op -Winline)
         if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "4.9" OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.9")
             add_compile_options (-Wfloat-conversion)
             add_compile_options (-Wshadow)
         endif ()
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        # Clang flags
-        # Enable maximum of Warnings :
+        # Enable maximum of Warnings for Clang:
         add_compile_options(-Weverything)
         add_compile_options(-Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-covered-switch-default -Wno-unreachable-code)
     endif (CMAKE_COMPILER_IS_GNUCXX)
 endif (MSVC)
-set(CPPLINT_ARG_LINELENGTH "--linelength=120")
-set(CPPLINT_ARG_VERBOSE    "--verbose=1")
+
 
 # List all sources/headers files
 set(source_files
@@ -98,17 +114,24 @@ target_link_libraries(CppSkeleton ${SYSTEM_LIBRARIES})
 
 # Optional additional targets:
 
+# Run cpplint C++ StyleGuide linter tool.
 option(CPPSKELETON_RUN_CPPLINT "Run cpplint.py tool for Google C++ StyleGuide." ON)
 if (CPPSKELETON_RUN_CPPLINT)
-    # add a cpplint target to the "all" target
-    add_custom_target(cpplint
-     ALL
-     COMMAND python ${PROJECT_SOURCE_DIR}/cpplint/cpplint.py ${CPPLINT_ARG_OUTPUT} ${CPPLINT_ARG_LINELENGTH} ${CPPLINT_ARG_VERBOSE} ${source_files}
-    )
+    find_package(PythonInterp 2.6)
+    if (PYTHONINTERP_FOUND)
+        # add a cpplint target to the "all" target
+        add_custom_target(cpplint
+         ALL
+         COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/cpplint/cpplint.py ${CPPLINT_ARG_OUTPUT} ${CPPLINT_ARG_LINELENGTH} ${CPPLINT_ARG_VERBOSE} ${source_files}
+        )
+    else ()
+        message(STATUS "Python not found, not runing cpplint")
+    endif (PYTHONINTERP_FOUND)
 else (CPPSKELETON_RUN_CPPLINT)
     message(STATUS "CPPSKELETON_RUN_CPPLINT OFF")
 endif (CPPSKELETON_RUN_CPPLINT)
 
+# Run cppcheck C++ static analysis tool.
 option(CPPSKELETON_RUN_CPPCHECK "Run cppcheck C++ static analysis tool." ON)
 if (CPPSKELETON_RUN_CPPCHECK)
     find_program(CPPCHECK_EXECUTABLE NAMES cppcheck)
@@ -116,8 +139,10 @@ if (CPPSKELETON_RUN_CPPCHECK)
         # add a cppcheck target to the "all" target
         add_custom_target(cppcheck
          ALL
-         COMMAND cppcheck -j 4 --enable=style --quiet ${CPPCHECK_ARG_TEMPLATE} ${PROJECT_SOURCE_DIR}/src
+         COMMAND ${CPPCHECK_EXECUTABLE} -j 8 --enable=style --quiet ${CPPCHECK_ARG_TEMPLATE} ${PROJECT_SOURCE_DIR}/src
         )
+        execute_process(COMMAND "${CPPCHECK_EXECUTABLE}" --version OUTPUT_VARIABLE CPPCHECK_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+        message(STATUS "Found Cppcheck: ${CPPCHECK_EXECUTABLE} ${CPPCHECK_VERSION}")
     else (CPPCHECK_EXECUTABLE)
         message(STATUS "Could NOT find cppcheck")
     endif (CPPCHECK_EXECUTABLE)
@@ -125,6 +150,7 @@ else (CPPSKELETON_RUN_CPPCHECK)
     message(STATUS "CPPSKELETON_RUN_CPPCHECK OFF")
 endif (CPPSKELETON_RUN_CPPCHECK)
 
+# Run Doxygen C++ documentation tool.
 option(CPPSKELETON_RUN_DOXYGEN "Run Doxygen C++ documentation tool." ON)
 if (CPPSKELETON_RUN_DOXYGEN)
     find_package(Doxygen)
@@ -132,7 +158,7 @@ if (CPPSKELETON_RUN_DOXYGEN)
         # add a Doxygen target to the "all" target
         add_custom_target(doxygen
          ALL
-         COMMAND doxygen Doxyfile > ${DEV_NULL}
+         COMMAND ${DOXYGEN_EXECUTABLE} Doxyfile > ${DEV_NULL}
          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         )
     endif (DOXYGEN_FOUND)
@@ -140,13 +166,26 @@ else (CPPSKELETON_RUN_DOXYGEN)
     message(STATUS "CPPSKELETON_RUN_DOXYGEN OFF")
 endif (CPPSKELETON_RUN_DOXYGEN)
 
+# Run CLOC line counting tool.
+option(CPPSKELETON_RUN_CLOC "Run CLOC line counting tool." ON)
+if (CPPSKELETON_RUN_CLOC)
+    find_program(CLOC_EXECUTABLE cloc DOC "CLOC tool for counting lines of code.")
+    if (CLOC_EXECUTABLE)
+        # add a cloc target to the "all" target
+        add_custom_target(cloc
+         ALL
+         COMMAND "${CLOC_EXECUTABLE}" ${source_files} ${script_files} --quiet
+         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        )
+    else (CLOC_EXECUTABLE)
+        message(STATUS "Could NOT find cloc")
+    endif (CLOC_EXECUTABLE)
+else (CPPSKELETON_RUN_CLOC)
+    message(STATUS "RUN_CLOC 		OFF")
+endif (CPPSKELETON_RUN_CLOC)
 
-option(CPPSKELETON_RUN_TESTS "Run gtest unit-test suite." ON)
+# Run googletest unit-test suite.
 if (CPPSKELETON_RUN_TESTS)
-    # add the subdirectory containing the CMakeLists.txt for the gtest library
-    add_subdirectory(googletest) 
-    include_directories("${PROJECT_SOURCE_DIR}/googletest/googletest/include")
-
     # add the test executable
     add_executable(TestSkeleton
      src/Utils/Time.cpp src/Utils/Time.h src/Utils/Time_test.cpp)
