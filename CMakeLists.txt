@@ -145,7 +145,7 @@ option(CPPSKELETON_RUN_TESTS "Run gtest unit-test suite." ON)
 if (CPPSKELETON_RUN_TESTS)
     # add the subdirectory containing the CMakeLists.txt for the gtest library
     add_subdirectory(googletest) 
-    include_directories("${PROJECT_SOURCE_DIR}/googletest/include")
+    include_directories("${PROJECT_SOURCE_DIR}/googletest/googletest/include")
 
     # add the test executable
     add_executable(TestSkeleton
