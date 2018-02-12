@@ -4,10 +4,9 @@
 version: "{build}"
 
 # scripts that run after cloning repository
-# NOTE : not updating submodule as cloning googletest does not work on AppVeyor
 install:
   - git submodule update --init cpplint
-# - git submodule update --init googletest
+  - git submodule update --init googletest
 
 # configurations to add to build matrix
 configuration:
@@ -19,9 +18,9 @@ configuration:
 before_build:
   - mkdir build
   - cd build
-  - cmake -DCPPSKELETON_RUN_TESTS=OFF ..
+  - cmake ..
 
 # build app
 build_script:
   - cmake --build .
-# - ctest --output-on-failure
+  - ctest --output-on-failure
