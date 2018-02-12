@@ -6,7 +6,7 @@ cpp-skeleton
 
 A simple skeleton for C++ development with CMake and Google Test.
 
-Copyright (c) 2013-2015 Sébastien Rombauts (sebastien.rombauts@gmail.com)
+Copyright (c) 2013-2018 Sébastien Rombauts (sebastien.rombauts@gmail.com)
 
 ## Building & testing with CMake
 
@@ -22,7 +22,7 @@ git submodule update
 ```bash
 mkdir build
 cd build
-cmake ..        # cmake .. -G "Visual Studio 10"    # for Visual Studio 2010
+cmake ..        # cmake .. -G "Visual Studio 15 2017 Win64" # for a  64 bits solution using Visual Studio 2017
 cmake --build . # make
 ctest .         # make test
 ```
