@@ -33,7 +33,7 @@ else (MSVC)
     set(DEV_NULL                "/dev/null")
     set(SYSTEM_LIBRARIES        "rt")
 
-    # C++11 :
+    # C++11
     add_compile_options(-std=c++0x) # equivalent to "-std=c++11" but backward compatible for GCC 4.6 on Travic-CI
     # Stack protection
     add_compile_options(-fstack-protector-all)
@@ -43,8 +43,6 @@ else (MSVC)
         add_compile_options(-rdynamic)
     endif (CMAKE_COMPILER_IS_GNUCXX)
 endif (MSVC)
-set(CPPLINT_ARG_LINELENGTH "--linelength=120")
-set(CPPLINT_ARG_VERBOSE    "--verbose=1")
 
 
 # Link to googletest unit-test suite.
@@ -59,7 +57,6 @@ endif (CPPSKELETON_RUN_TESTS)
 # Enable maximum Warning level for our own code (after the googletest lib)
 if (MSVC)
     # Set warning level to maximum (instead of default /W3)
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} /W4")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else (MSVC)
     if (CMAKE_COMPILER_IS_GNUCXX)
@@ -119,16 +116,23 @@ option(CPPSKELETON_RUN_CPPLINT "Run cpplint.py tool for Google C++ StyleGuide." 
 if (CPPSKELETON_RUN_CPPLINT)
     find_package(PythonInterp 2.6)
     if (PYTHONINTERP_FOUND)
-        # add a cpplint target to the "all" target
-        add_custom_target(cpplint
-         ALL
-         COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/cpplint/cpplint.py ${CPPLINT_ARG_OUTPUT} ${CPPLINT_ARG_LINELENGTH} ${CPPLINT_ARG_VERBOSE} ${source_files}
-        )
+        set(CPPLINT_ARG_LINELENGTH "--linelength=120")
+        set(CPPLINT_ARG_VERBOSE    "--verbose=1")
+        if(EXISTS "${PROJECT_SOURCE_DIR}/cpplint/cpplint.py")
+            # add a cpplint target to the "all" target
+            add_custom_target(cpplint
+                ALL
+                COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/cpplint/cpplint.py ${CPPLINT_ARG_OUTPUT} ${CPPLINT_ARG_LINELENGTH} ${CPPLINT_ARG_VERBOSE} ${source_files}
+            )
+            message(STATUS "CPPSKELETON_RUN_CPPLINT        ON")
+        else ()
+            message(STATUS "cpplint submodule missing")
+        endif ()
     else ()
         message(STATUS "Python not found, not runing cpplint")
     endif (PYTHONINTERP_FOUND)
 else (CPPSKELETON_RUN_CPPLINT)
-    message(STATUS "CPPSKELETON_RUN_CPPLINT OFF")
+    message(STATUS "CPPSKELETON_RUN_CPPLINT        OFF")
 endif (CPPSKELETON_RUN_CPPLINT)
 
 # Run cppcheck C++ static analysis tool.
@@ -138,16 +142,16 @@ if (CPPSKELETON_RUN_CPPCHECK)
     if (CPPCHECK_EXECUTABLE)
         # add a cppcheck target to the "all" target
         add_custom_target(cppcheck
-         ALL
-         COMMAND ${CPPCHECK_EXECUTABLE} -j 8 --enable=style --quiet ${CPPCHECK_ARG_TEMPLATE} ${PROJECT_SOURCE_DIR}/src
+            ALL
+            COMMAND ${CPPCHECK_EXECUTABLE} -j 8 --enable=style --quiet ${CPPCHECK_ARG_TEMPLATE} ${PROJECT_SOURCE_DIR}/src
         )
         execute_process(COMMAND "${CPPCHECK_EXECUTABLE}" --version OUTPUT_VARIABLE CPPCHECK_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-        message(STATUS "Found Cppcheck: ${CPPCHECK_EXECUTABLE} ${CPPCHECK_VERSION}")
+        message(STATUS "Found Cppcheck:                ${CPPCHECK_EXECUTABLE} ${CPPCHECK_VERSION}")
     else (CPPCHECK_EXECUTABLE)
         message(STATUS "Could NOT find cppcheck")
     endif (CPPCHECK_EXECUTABLE)
 else (CPPSKELETON_RUN_CPPCHECK)
-    message(STATUS "CPPSKELETON_RUN_CPPCHECK OFF")
+    message(STATUS "CPPSKELETON_RUN_CPPCHECK       OFF")
 endif (CPPSKELETON_RUN_CPPCHECK)
 
 # Run Doxygen C++ documentation tool.
@@ -157,13 +161,13 @@ if (CPPSKELETON_RUN_DOXYGEN)
     if (DOXYGEN_FOUND)
         # add a Doxygen target to the "all" target
         add_custom_target(doxygen
-         ALL
-         COMMAND ${DOXYGEN_EXECUTABLE} Doxyfile > ${DEV_NULL}
-         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            ALL
+            COMMAND ${DOXYGEN_EXECUTABLE} Doxyfile > ${DEV_NULL}
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         )
     endif (DOXYGEN_FOUND)
 else (CPPSKELETON_RUN_DOXYGEN)
-    message(STATUS "CPPSKELETON_RUN_DOXYGEN OFF")
+    message(STATUS "CPPSKELETON_RUN_DOXYGEN        OFF")
 endif (CPPSKELETON_RUN_DOXYGEN)
 
 # Run CLOC line counting tool.
@@ -173,22 +177,22 @@ if (CPPSKELETON_RUN_CLOC)
     if (CLOC_EXECUTABLE)
         # add a cloc target to the "all" target
         add_custom_target(cloc
-         ALL
-         COMMAND "${CLOC_EXECUTABLE}" ${source_files} ${script_files} --quiet
-         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            ALL
+            COMMAND "${CLOC_EXECUTABLE}" ${source_files} ${script_files} --quiet
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         )
     else (CLOC_EXECUTABLE)
         message(STATUS "Could NOT find cloc")
     endif (CLOC_EXECUTABLE)
 else (CPPSKELETON_RUN_CLOC)
-    message(STATUS "RUN_CLOC 		OFF")
+    message(STATUS "RUN_CLOC 		           OFF")
 endif (CPPSKELETON_RUN_CLOC)
 
 # Run googletest unit-test suite.
 if (CPPSKELETON_RUN_TESTS)
     # add the test executable
     add_executable(TestSkeleton
-     src/Utils/Time.cpp src/Utils/Time.h src/Utils/Time_test.cpp)
+        src/Utils/Time.cpp src/Utils/Time.h src/Utils/Time_test.cpp)
     target_link_libraries(TestSkeleton gtest_main ${SYSTEM_LIBRARIES})
 
     # add a "test" target:
@@ -200,6 +204,6 @@ if (CPPSKELETON_RUN_TESTS)
     # does the tests pass
     add_test(TestsPass TestSkeleton)
 else (CPPSKELETON_RUN_TESTS)
-    message(STATUS "CPPSKELETON_RUN_TESTS OFF")
+    message(STATUS "CPPSKELETON_RUN_TESTS          OFF")
 endif (CPPSKELETON_RUN_TESTS)
 
